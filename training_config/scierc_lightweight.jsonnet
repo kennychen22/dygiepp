@@ -16,7 +16,7 @@ local params = {
   target: "rel",
 
   // If debugging, don't load expensive embedding files.
-  debug: false,
+  debug: true,
 
   // Specifies the token-level features that will be created.
   use_glove: false,
@@ -75,8 +75,8 @@ local params = {
   optimizer: {
     type: "adamw",
     lr: 1e-3,
-    //warmup: 0.1,
-    //t_total: 10000,
+   // warmup: 0.1,
+   // t_total: 10000,
     weight_decay: 0.0,
     parameter_groups: [
       [["_text_field_embedder"],
