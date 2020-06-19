@@ -29,17 +29,18 @@ function(p) {
   local bert_large_dim = 1024,
   local scibert_dim = 768,
 
-   local module_initializer = {"regexes":
+  local module_initializer = {"regexes":
     [[".*weight", {"type": "xavier_normal"}],
     [".*weight_matrix", {"type": "xavier_normal"}]]
   },
+
+
 
   local dygie_initializer = {"regexes":
     [["_span_width_embedding.weight", {"type": "xavier_normal"}],
     ["_context_layer._module.weight_ih.*", {"type": "xavier_normal"}],
     ["_context_layer._module.weight_hh.*", {"type": "orthogonal"}]]
   },
-
 
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -129,27 +130,27 @@ function(p) {
   // Model components
 
   local token_indexers = {
-      tokens: {
-        [if p.use_glove then "tokens"]: {
-          type: "single_id",
-          lowercase_tokens: false
-        },
-        [if p.use_char then "token_characters"]: {
-          type: "characters",
-          min_padding_length: 5
-        },
-        [if p.use_elmo then "elmo"]: {
-          type: "elmo_characters"
-        },
-          type: "pretrained_transformer_mismatched",
-          model_name: (if p.use_bert_base then "bert-base-cased"
-                             else if p.use_bert_large then "bert-large-cased"
-                             else "allenai/scibert_scivocab_cased")
-      }
+    [if p.use_glove then "tokens"]: {
+      type: "single_id",
+      lowercase_tokens: false
+    },
+    [if p.use_char then "token_characters"]: {
+      type: "characters",
+      min_padding_length: 5
+    },
+    [if p.use_elmo then "elmo"]: {
+      type: "elmo_characters"
+    },
+    [if use_bert then "bert"]: {
+      type: "pretrained_transformer_mismatched",
+      model_name: (if p.use_bert_base then "bert-base-cased"
+                         else if p.use_bert_large then "bert-large-cased"
+                         else "allenai/scibert_scivocab_cased")
+    }
   },
 
   local text_field_embedder = {
-      token_embedders: {
+    token_embedders: {
       [if p.use_glove then "tokens"]: {
         type: "embedding",
         pretrained_file: if p.debug then null else "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.840B.300d.txt.gz",
@@ -245,8 +246,7 @@ function(p) {
   test_data_path: std.extVar("ie_test_data_path"),
   // If provided, use pre-defined vocabulary. Else compute on the fly.
   [if "vocab_path" in p then "vocabulary"]: {
-    type: "from_files",
-    directory: p.vocab_path
+    directory_path: p.vocab_path
   },
   model: {
     type: "dygie",
@@ -330,26 +330,23 @@ function(p) {
     }
   },
   data_loader: {
-    batch_sampler: {
-        type: "bucket",
-        batch_size: p.batch_size,
-        [if "instances_per_epoch" in p then "instances_per_epoch"]: p.instances_per_epoch
-    }
+    type: if co_train then "ie_multitask" else "ie_batch",
+    batch_size: p.batch_size,
+    [if "instances_per_epoch" in p then "instances_per_epoch"]: p.instances_per_epoch
   },
   validation_data_loader: {
-    batch_sampler: {
-        type: "bucket",
-        batch_size: p.batch_size
-    }
+    type: "ie_document",
+    batch_size: p.batch_size
   },
   trainer: {
-    checkpointer : {
-        num_serialized_models_to_keep: 3
+    "checkpointer" : {
+    num_serialized_models_to_keep: 3
     },
     num_epochs: p.num_epochs,
     grad_norm: 5.0,
     patience : p.patience,
-    cuda_device : -1,
+    cuda_device : 0,
+    // not working somehow [std.parseInt(x) for x in std.split(std.extVar("cuda_device"), ",")],
     validation_metric: validation_metrics[p.target],
     learning_rate_scheduler: p.learning_rate_scheduler,
     optimizer: p.optimizer,
