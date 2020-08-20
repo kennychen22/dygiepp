@@ -39,7 +39,7 @@ bash scripts/train.sh scierc
 
 The resulting model will go in `models/scierc`. For more information on how to modify training configs (e.g. to change the GPU used for training), see [config.md](doc/config.md).
 
-Information on preparing specific training datasets is below.
+Information on preparing specific training datasets is below. For more information on how to create training batches that utilize GPU resources efficiently, see [model.md](doc/model.md)
 
 
 ### SciERC
@@ -266,6 +266,8 @@ allennlp predict pretrained/scierc.tar.gz \
     --cuda-device 0 \
     --silent
 ```
+
+The predictions include the predict labels, as well as logits and softmax scores. For more information see, [docs/data.md](docs/data.md).
 
 **Caveat**: Models trained to predict coreference clusters need to make predictions on a whole document at once. This can cause memory issues. To get around this there are two options:
 

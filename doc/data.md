@@ -5,6 +5,7 @@ We provide details on the data preprocessing for each of the datasets available 
 ## Table of contents
 
 - [Data format](#data-format)
+- [Format for predictions](#format-for-predictions)
 - [Formatting a new dataset](#formatting-a-new-dataset)
 - [Preprocessing details for existing datasets](#preprocesing-details-for-existing-datasets)
 
@@ -82,6 +83,30 @@ data = Dataset("data/scierc/processed_data/json/train.json")
 print(data[0])  # Print the first document.
 print(data[0][1].ner)  # Print the named entities in the second sentence of the first document.
 ```
+
+### User-defined sentence metadata
+
+You can define additional metadata associated with each sentence that will be ignored by the model; these metadata fields should be prefixed with `_`. For instance, if you wanted to explicitly keep track of the index of each sentence in a document, you could add a field to your input document
+
+```python
+{
+  "doc_key": "some_document",
+  "dataset": "some_dataset",
+  "sentences": [["One", "sentence"], ["Another", "sentence"]],
+  "_sentence_index": [0, 1]   # User-added metadata field.
+}
+```
+
+## Format for predictions
+
+When model predictions are saved to file, they are formatted as described above, but with the following changes:
+
+- The field names have the word `predicted` prepended. For instance, `predicted_ner`, `predicted_relations`, etc.
+- Each prediction has two additional entries appended, specifying the logit score and softmax probability for the predicted label. For instance:
+  - A single predicted relation prediction has the form `[start_tok_1, end_tok_1, start_tok_2, end_tok_2, predicted_label, label_logit, label_softmax]`.
+  - A single predicted event has the form `[[trigger_tok, predited_event_type, event_type_logit, event_type_softmax], [start_tok_arg1, end_tok_arg1, predicted_arg1_type, arg1_type_logit, arg1_type_softmax], ...]`.
+  - TODO: This hasn't been implemented yet for coreference.
+
 
 ## Formatting a new dataset
 
